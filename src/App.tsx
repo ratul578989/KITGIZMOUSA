@@ -4514,7 +4514,7 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
         text: reply.trim(),
         attachmentUrl,
         attachmentName,
-        createdAt: serverTimestamp() // Use serverTimestamp for integrity, but fulfills user's intent
+        createdAt: new Date()
       });
 
       // Update ticket status based on sender and current state
@@ -4589,7 +4589,7 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
 
         {/* Replies */}
         {messages.map((msg) => {
-          const isFromAdmin = ADMIN_EMAILS.includes(msg.senderEmail || '');
+          const isFromAdmin = msg.senderEmail === 'info.kitgizmo@gmail.com';
           const alignRight = isFromAdmin;
 
           return (
@@ -4605,7 +4605,8 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
                   </span>
                   <span className={`text-[9px] font-bold uppercase tracking-widest ${alignRight ? 'text-slate-500' : 'text-white/40'}`}>•</span>
                   <span className={`text-[9px] font-bold uppercase tracking-widest ${alignRight ? 'text-slate-500' : 'text-white/40'}`}>
-                    {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString() : 'Just now'}
+                    {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString() : 
+                     msg.createdAt instanceof Date ? msg.createdAt.toLocaleTimeString() : 'Just now'}
                   </span>
                 </div>
                 <p className="text-white text-sm leading-relaxed font-bold">{msg.text}</p>
