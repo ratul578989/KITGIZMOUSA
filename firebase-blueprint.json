@@ -1,0 +1,168 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Store user balance, account status, and fulfillment metrics.",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phoneNumber": { "type": "string" },
+        "totalBalance": { "type": "number" },
+        "totalPayout": { "type": "number" },
+        "status": { "type": "string", "enum": ["Active", "Pending", "Restricted", "Suspended"] },
+        "ordersFulfilled": { "type": "number" },
+        "ordersPending": { "type": "number" },
+        "isAdmin": { "type": "boolean" },
+        "dashboardWidgets": { 
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of widget IDs in display order."
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "fullName"]
+    },
+    "Order": {
+      "title": "Service Order",
+      "description": "Records of marketplace service purchases.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "serviceName": { "type": "string" },
+        "price": { "type": "number" },
+        "status": { "type": "string", "enum": ["Pending", "Fulfilled", "Cancelled", "Processing"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "serviceName", "price", "status"]
+    },
+    "DepositRequest": {
+      "title": "Deposit Top-up Request",
+      "description": "Wallet top-up requests needing admin approval.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["Pending", "Approved", "Rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amount", "status"]
+    },
+    "DigitalProduct": {
+      "title": "Digital Product",
+      "description": "Information about digital products available for purchase in the store.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "fileLink": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "price"]
+    },
+    "PaymentMethod": {
+      "title": "Payment Method",
+      "description": "Configuration for deposit payment methods.",
+      "type": "object",
+      "properties": {
+        "methodName": { "type": "string" },
+        "paymentId": { "type": "string" },
+        "instructions": { "type": "string" },
+        "qrUrl": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["methodName", "paymentId"]
+    },
+    "GlobalSettings": {
+      "title": "Global Settings",
+      "description": "Global application configuration.",
+      "type": "object",
+      "properties": {
+        "siteName": { "type": "string" },
+        "maintenanceMode": { "type": "boolean" },
+        "payoutMinimum": { "type": "number" }
+      }
+    },
+    "SupportTicket": {
+      "title": "Support Ticket",
+      "description": "User support requests and messages.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "screenshotBase64": { "type": "string" },
+        "status": { "type": "string", "enum": ["Pending", "Solved"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "email", "subject", "message", "status"]
+    },
+    "AdCampaign": {
+      "title": "AI Ad Campaign",
+      "description": "Ad campaign requests for platforms like TikTok, Facebook, or Instagram.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "platform": { "type": "string", "enum": ["TikTok", "Facebook", "Instagram"] },
+        "productLink": { "type": "string" },
+        "country": { "type": "string" },
+        "scope": { "type": "string", "enum": ["Full Country", "Specific States", "Specific Cities"] },
+        "details": { "type": "string" },
+        "dailyBudget": { "type": "number" },
+        "status": { "type": "string", "enum": ["Pending", "Active", "Rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "platform", "productLink", "dailyBudget", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Private user profiles and financial data."
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Global collection of all service orders."
+    },
+    "/products/{productId}": {
+      "schema": "DigitalProduct",
+      "description": "Public collection of digital products for sale."
+    },
+    "/deposits/{depositId}": {
+      "schema": "DepositRequest",
+      "description": "Top-up requests for manual admin review."
+    },
+    "/payouts/{payoutId}": {
+      "schema": "PayoutRequest",
+      "description": "Withdrawal requests for manual admin review."
+    },
+    "/support_tickets/{ticketId}": {
+      "schema": "SupportTicket",
+      "description": "User support requests for admin review."
+    },
+    "/ad_campaigns/{campaignId}": {
+      "schema": "AdCampaign",
+      "description": "AI Ad campaign launch requests."
+    },
+    "/payment_methods/{methodId}": {
+      "schema": "PaymentMethod",
+      "description": "Active payment methods for user deposits."
+    },
+    "/payment_settings/{methodId}": {
+      "schema": "PaymentMethod",
+      "description": "Configured payment methods for deposits."
+    },
+    "/settings/global": {
+      "schema": "GlobalSettings",
+      "description": "Global system configuration."
+    }
+  }
+}

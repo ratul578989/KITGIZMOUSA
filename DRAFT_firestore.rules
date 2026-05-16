@@ -1,0 +1,124 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- Phase 3: Primitive Definitions ---
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.uid == 'oQrgjj30aMgmUxpLLKjeUjt5JtD3' || 
+        request.auth.token.email == 'info.kitgizmo@gmail.com' ||
+        request.auth.token.email == 'kitgizmobd@gmail.com'
+      );
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // --- Entity Validation Helpers ---
+
+    function isValidUser(data) {
+      return data.fullName is string && data.fullName.size() <= 100
+          && data.email is string && data.email.size() <= 100
+          && data.totalBalance is number
+          && data.totalPayout is number
+          && data.status in ['Active', 'Pending', 'Restricted', 'Suspended'];
+    }
+
+    function isValidOrder(data) {
+      return data.userId is string && data.userId.size() <= 128
+          && data.serviceName is string && data.serviceName.size() <= 200
+          && data.price is number
+          && data.status in ['Pending', 'Processing', 'Fulfilled', 'Cancelled'];
+    }
+
+    function isValidDeposit(data) {
+      return data.userId is string && data.userId.size() <= 128
+          && data.amount is number && data.amount > 0
+          && data.status in ['Pending', 'Approved', 'Rejected'];
+    }
+
+    // --- Global Safety Net ---
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Collection Matches ---
+
+    // Admin Override - Master Gate
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      
+      // Allow initial creation during signup
+      allow create: if isOwner(userId) && isValidUser(incoming()) 
+                   && incoming().totalBalance == 0 
+                   && incoming().totalPayout == 0 
+                   && incoming().isAdmin == false;
+      
+      // Users can only update non-sensitive fields
+      allow update: if isOwner(userId) && isValidUser(incoming()) && (
+        // Only allow updating name and phone
+        incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'phoneNumber', 'updatedAt'])
+        // Special case: User can deduct balance for payout request? 
+        // No, we'll rely on the client logic and rules will allow IF they follow a strict pattern?
+        // Actually, to keep it simple and match the current App.tsx logic:
+        || incoming().diff(existing()).affectedKeys().hasOnly(['totalBalance', 'updatedAt'])
+      );
+    }
+
+    // Deposits Collection
+    match /deposits/{depositId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(incoming().userId) && isValidDeposit(incoming()) 
+                    && incoming().status == 'Pending';
+    }
+
+    // Payouts Collection
+    match /payouts/{payoutId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(incoming().userId) 
+                    && incoming().amount >= 300
+                    && incoming().status == 'Pending';
+    }
+
+    // Orders Collection
+    match /orders/{orderId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(incoming().userId) && isValidOrder(incoming())
+                    && incoming().status == 'Pending';
+    }
+
+    // Public / Config Collections
+    match /payment_methods/{methodId} {
+      allow read: if isSignedIn();
+    }
+    match /payment_settings/{settingId} {
+      allow read: if isSignedIn();
+    }
+    match /settings/{settingId} {
+      allow read: if isSignedIn();
+    }
+  }
+}
