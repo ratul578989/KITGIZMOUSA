@@ -247,8 +247,10 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   throw new Error(JSON.stringify(errInfo));
 }
 
+const ADMIN_EMAILS = ['info.kitgizmo@gmail.com'];
+
 const isUserAdmin = (user: FirebaseUser | null) => {
-  return user?.email === 'info.kitgizmo@gmail.com';
+  return user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
 };
 
 // --- Components ---
@@ -611,13 +613,13 @@ const AdminPanelView = ({
   const [editingMethodId, setEditingMethodId] = useState<string | null>(null);
 
   useEffect(() => {
-    const isAdmin = isUserAdmin(user); // Check email strictly
-    if (!user || !isAdmin) {
+    // CRITICAL: Double check admin status before mounting listeners to prevent permission errors
+    if (!user || user.email !== 'info.kitgizmo@gmail.com') {
       setLoading(false);
       return;
     }
     
-    // Listen to users
+    const isAdmin = true; // We already checked email above
     const usersUnsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
       setUsers(snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile)));
     }, (err) => {
@@ -2153,6 +2155,7 @@ const PayoutView = ({ user, totalBalance }: { user: FirebaseUser | null, totalBa
 
     setLoading(true);
     try {
+      // Create payout request and deduct balance in a single transaction
       await runTransaction(db, async (transaction) => {
         const userRef = doc(db, 'users', user.uid);
         const userSnap = await transaction.get(userRef);
@@ -2166,7 +2169,7 @@ const PayoutView = ({ user, totalBalance }: { user: FirebaseUser | null, totalBa
           throw new Error("Insufficient balance for withdrawal.");
         }
         
-        // 1. Create payout request
+        // 1. Create payout request document - Pending by default
         const newPayoutRef = doc(collection(db, 'payouts'));
         transaction.set(newPayoutRef, {
           userId: user.uid,
@@ -2186,10 +2189,11 @@ const PayoutView = ({ user, totalBalance }: { user: FirebaseUser | null, totalBa
         });
       });
 
-      alert("Payout request submitted! Your balance has been adjusted. Admin will process the transfer shortly.");
+      alert("Withdrawal request submitted! Your balance has been deducted and is being processed by the Finance Dept.");
       setAmount('');
       setWalletAddress('');
     } catch (err: any) {
+      console.error("Payout error:", err);
       if (err.message.includes("Insufficient balance")) {
         alert(err.message);
       } else {
@@ -4186,37 +4190,64 @@ const AdCampaignsView = ({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {userCampaigns.map((c) => (
-              <div key={c.id} className="bg-slate-900/50 border border-slate-800 rounded-[32px] p-6 hover:border-slate-700 transition-all group">
-                <div className="flex items-start justify-between mb-6">
-                  <div className={`p-3 rounded-xl ${
-                    c.platform === 'TikTok' ? 'bg-rose-500/10 text-rose-400' : 
-                    c.platform === 'Facebook' ? 'bg-blue-500/10 text-blue-400' : 'bg-violet-500/10 text-violet-400'
-                  }`}>
-                    {c.platform === 'TikTok' ? <Zap className="w-5 h-5" /> : c.platform === 'Facebook' ? <Facebook className="w-5 h-5" /> : <Instagram className="w-5 h-5" />}
-                  </div>
-                  <StatusBadge status={c.status} />
+              <div key={c.id} className="bg-slate-900/50 border border-slate-800 rounded-[32px] p-6 hover:border-slate-700 transition-all group relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                  {c.platform === 'TikTok' ? <Zap className="w-20 h-20" /> : c.platform === 'Facebook' ? <Facebook className="w-20 h-20" /> : <Instagram className="w-20 h-20" />}
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">{c.platform} ADS</p>
-                    <h4 className="text-white font-bold truncate text-sm">{c.productLink}</h4>
+                <div className="flex items-start justify-between mb-6 relative z-10">
+                  <div className={`p-3 rounded-xl ${
+                    c.platform === 'TikTok' ? 'bg-rose-500/10 text-rose-400 shadow-[0_0_15px_-3px_rgba(244,63,94,0.3)]' : 
+                    c.platform === 'Facebook' ? 'bg-blue-500/10 text-blue-400 shadow-[0_0_15px_-3px_rgba(59,130,246,0.3)]' : 'bg-violet-500/10 text-violet-400 shadow-[0_0_15px_-3px_rgba(139,92,246,0.3)]'
+                  }`}>
+                    {c.platform === 'TikTok' ? <Zap className="w-5 h-5 shadow-inner" /> : c.platform === 'Facebook' ? <Facebook className="w-5 h-5" /> : <Instagram className="w-5 h-5" />}
                   </div>
-                  <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div className="bg-slate-950/50 p-3 rounded-2xl border border-slate-800">
-                      <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Budget</p>
-                      <p className="text-xs font-black text-white">${c.dailyBudget}/day</p>
+                  <div className="flex flex-col items-end gap-2">
+                    <StatusBadge status={c.status} />
+                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">ID: {c.id.substring(0, 8)}</span>
+                  </div>
+                </div>
+                <div className="space-y-4 relative z-10">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{c.platform} ADS</p>
+                      <span className="w-1 h-1 rounded-full bg-slate-700" />
+                      <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">LIVE METRICS ENABLED</span>
                     </div>
-                    <div className="bg-slate-950/50 p-3 rounded-2xl border border-slate-800">
-                      <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Target</p>
+                    <h4 className="text-white font-bold truncate text-sm hover:text-emerald-400 transition-colors cursor-pointer" onClick={() => window.open(c.productLink, '_blank')}>{c.productLink}</h4>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div className="bg-slate-950/50 p-3 rounded-2xl border border-slate-800 group-hover:border-slate-700 transition-colors">
+                      <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-0.5">Budget</p>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-black text-white">${c.dailyBudget}/day</span>
+                        {c.status === 'Active' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                      </div>
+                    </div>
+                    <div className="bg-slate-950/50 p-3 rounded-2xl border border-slate-800 group-hover:border-slate-700 transition-colors">
+                      <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-0.5">Target</p>
                       <p className="text-xs font-black text-white truncate">{c.country}</p>
                     </div>
                   </div>
+                  
+                  {/* Progress Sim (Aesthetic only) */}
+                  {c.status === 'Active' && (
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex justify-between text-[8px] font-black text-slate-600 uppercase tracking-widest">
+                        <span>Campaign Optimization</span>
+                        <span className="text-emerald-500">92%</span>
+                      </div>
+                      <div className="h-1 bg-slate-950 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500 w-[92%] shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                      </div>
+                    </div>
+                  )}
                   
                   {/* User Actions */}
                   <div className="flex items-center gap-2 pt-2">
                     <button 
                       onClick={() => startEditing(c)}
-                      className="p-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all"
+                      className="p-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all border border-slate-700/50 shadow-lg"
                       title="Edit Campaign"
                     >
                       <Shield className="w-3.5 h-3.5" />
@@ -4225,26 +4256,26 @@ const AdCampaignsView = ({
                     {c.status === 'Active' ? (
                       <button 
                         onClick={() => updateStatus(c, 'Stopped')}
-                        className="flex-1 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border border-rose-500/20"
+                        className="flex-1 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border border-rose-500/20 shadow-lg"
                       >
-                        PAUSE / OFF
+                        PAUSE CAMPAIGN
                       </button>
                     ) : c.status === 'Stopped' ? (
                       <button 
                         onClick={() => updateStatus(c, 'Active')}
-                        className="flex-1 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border border-emerald-500/20"
+                        className="flex-1 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border border-emerald-500/20 shadow-lg"
                       >
-                        RESUME / ON
+                        RESUME CAMPAIGN
                       </button>
                     ) : (
-                      <div className="flex-1 text-center py-3 bg-slate-800/50 rounded-xl border border-slate-800">
-                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Reviewing...</span>
+                      <div className="flex-1 text-center py-3 bg-slate-800/30 rounded-xl border border-slate-800/50 backdrop-blur-sm">
+                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic animate-pulse">Reviewing...</span>
                       </div>
                     )}
                     
                     <button 
                       onClick={() => handleDeleteCampaign(c.id)}
-                      className="p-3 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl transition-all border border-rose-500/20"
+                      className="p-3 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl transition-all border border-rose-500/20 shadow-lg"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -4253,12 +4284,30 @@ const AdCampaignsView = ({
               </div>
             ))}
             {userCampaigns.length === 0 && !loading && (
-              <div className="col-span-full py-20 bg-slate-950/50 border-2 border-dashed border-slate-900 rounded-[40px] flex flex-col items-center justify-center text-center">
-                <PlusCircle className="w-12 h-12 text-slate-800 mb-4" />
-                <p className="text-slate-600 font-bold uppercase tracking-widest text-xs">No active campaign requests</p>
-                <p className="text-slate-700 text-[10px] uppercase font-black tracking-widest mt-2">Select a platform above to get started</p>
+              <div className="col-span-full py-24 bg-slate-900/30 border-2 border-dashed border-slate-800/50 rounded-[48px] flex flex-col items-center justify-center text-center space-y-6">
+                <div className="w-20 h-20 bg-slate-800/50 rounded-3xl flex items-center justify-center relative">
+                  <BarChart3 className="w-10 h-10 text-slate-700" />
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
+                    <Plus className="w-4 h-4 text-slate-950 font-bold" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-xl font-bold text-white uppercase tracking-tight">No Active Campaigns</h4>
+                  <p className="text-slate-500 text-xs font-medium max-w-xs mx-auto">
+                    You haven't launched any AI ad campaigns yet. Select a platform above to start scaling your product.
+                  </p>
+                </div>
+                {!platform && !editingCampaign && (
+                  <button 
+                    onClick={() => setPlatform('TikTok')}
+                    className="bg-emerald-500 text-slate-950 px-8 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/20"
+                  >
+                    Get Started Now
+                  </button>
+                )}
               </div>
             )}
+
           </div>
         </section>
       )}
@@ -4540,7 +4589,6 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
 
         {/* Replies */}
         {messages.map((msg) => {
-          // Alignment Logic: Admin (info.kitgizmo@gmail.com) on RIGHT, student on LEFT
           const isFromAdmin = ADMIN_EMAILS.includes(msg.senderEmail || '');
           const alignRight = isFromAdmin;
 
@@ -4548,29 +4596,33 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
             <div key={msg.id} className={`flex ${alignRight ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[80%] p-4 rounded-2xl ${
                 alignRight 
-                  ? 'bg-slate-800 border border-slate-700 rounded-tr-none shadow-xl' // Admin Right: Dark Navy/Ash
-                  : 'bg-emerald-500 rounded-tl-none shadow-lg shadow-emerald-500/10' // User Left: Vibrant Emerald
+                  ? 'bg-slate-800 border border-slate-700 rounded-tr-none shadow-xl' 
+                  : 'bg-emerald-500 rounded-tl-none shadow-lg shadow-emerald-500/10'
               }`}>
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`text-[9px] font-black uppercase tracking-widest ${alignRight ? 'text-emerald-400' : 'text-white'}`}>
-                    {isFromAdmin ? 'OFFICIAL SUPPORT ⚡' : 'Me'}
+                    {alignRight ? 'OFFICIAL SUPPORT ⚡' : 'Me'}
                   </span>
                   <span className={`text-[9px] font-bold uppercase tracking-widest ${alignRight ? 'text-slate-500' : 'text-white/40'}`}>•</span>
                   <span className={`text-[9px] font-bold uppercase tracking-widest ${alignRight ? 'text-slate-500' : 'text-white/40'}`}>
                     {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString() : 'Just now'}
                   </span>
                 </div>
-                <p className={`text-sm leading-relaxed font-bold ${alignRight ? 'text-white' : 'text-white'}`}>{msg.text}</p>
+                <p className="text-white text-sm leading-relaxed font-bold">{msg.text}</p>
                 
                 {msg.attachmentUrl && (
                   <div className={`mt-2 p-3 rounded-xl border flex items-center gap-3 group transition-all cursor-pointer ${
                     alignRight ? 'bg-slate-950/30 border-slate-700' : 'bg-white/10 border-white/20'
-                  }`} onClick={() => window.open(msg.attachmentUrl, '_blank')}>
+                  }`} onClick={() => window.open(msg.attachmentUrl || '', '_blank')}>
                     <div className={`p-2 rounded-lg ${alignRight ? 'bg-slate-900 text-emerald-500' : 'bg-white/20 text-white'}`}>
-                      <FileText className="w-4 h-4" />
+                      {msg.attachmentUrl?.includes('data:image') || msg.attachmentUrl?.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                        <Image className="w-4 h-4" />
+                      ) : (
+                        <FileText className="w-4 h-4" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-[10px] font-bold uppercase tracking-tight truncate ${alignRight ? 'text-white' : 'text-white'}`}>{msg.attachmentName || 'Attachment'}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-tight truncate text-white">{msg.attachmentName || 'Attachment'}</p>
                       <p className={`text-[8px] font-black uppercase tracking-widest ${alignRight ? 'text-slate-500' : 'text-white/50'}`}>Click to open</p>
                     </div>
                     <ArrowUpRight className={`w-3.5 h-3.5 ${alignRight ? 'text-slate-600' : 'text-white/30'} group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform`} />
@@ -5716,12 +5768,12 @@ const DashboardLayout = ({ user, userData }: { user: FirebaseUser | null, userDa
                       onForceStop={handleForceStopCampaign}
                       onForceStart={handleForceStartCampaign}
                     />
-                  ) : activeTab === 'admin' && user && user.email === 'info.kitgizmo@gmail.com' ? (
+                  ) : (activeTab === 'admin' && user && user.email === 'info.kitgizmo@gmail.com') ? (
                     <AdminPanelView 
                       user={user} 
-                      onForceStop={handleForceStopCampaign}
-                      onForceStart={handleForceStartCampaign}
-                      onDeleteCampaign={handleDeleteCampaignGlobal}
+                      onForceStop={handleForceStopCampaign} 
+                      onForceStart={handleForceStartCampaign} 
+                      onDeleteCampaign={handleDeleteCampaignGlobal} 
                     />
                   ) : activeTab === 'wallet' ? (
                     <TransactionHistoryView user={user} />
@@ -5734,26 +5786,18 @@ const DashboardLayout = ({ user, userData }: { user: FirebaseUser | null, userDa
                   ) : (
                     <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-12 flex flex-col items-center justify-center text-center space-y-6">
                       <div className="w-20 h-20 bg-slate-800 rounded-3xl flex items-center justify-center">
-                        {activeTab === 'orders' && <ShoppingCart className="w-10 h-10 text-emerald-400" />}
-                        {activeTab === 'ads' && <BarChart3 className="w-10 h-10 text-emerald-400" />}
-                        {activeTab === 'wallet' && <History className="w-10 h-10 text-emerald-400" />}
-                        {activeTab === 'deposit' && <ArrowDownCircle className="w-10 h-10 text-emerald-400" />}
-                        {activeTab === 'withdraw' && <ArrowUpCircle className="w-10 h-10 text-emerald-400" />}
-                        {activeTab === 'services' && <Truck className="w-10 h-10 text-emerald-400" />}
-                        {activeTab === 'support' && <Headphones className="w-10 h-10 text-emerald-400" />}
+                        <Loader2 className="w-10 h-10 text-emerald-400 animate-spin" />
                       </div>
                       <div className="space-y-2">
-                        <h3 className="text-2xl font-bold text-white">Module Integration Pending</h3>
-                        <p className="text-slate-400 max-w-sm mx-auto">
-                          Our AI is syncronizing data from the USA Fulfilment nodes. This section will be available once the initial handshake is complete.
+                        <h3 className="text-2xl font-bold text-white uppercase tracking-tight">Syncing Node Data...</h3>
+                        <p className="text-slate-400 max-w-sm mx-auto font-medium text-sm">
+                          Our AI infrastructure is currently Handshaking with the global fulfilment nodes. 
+                          This section will be available once the data stream is verified.
                         </p>
-                      </div>
-                      <div className="flex items-center gap-3 bg-emerald-500/10 px-4 py-2 rounded-full border border-emerald-500/20">
-                        <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
-                        <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Node Sync 82%</span>
                       </div>
                     </div>
                   )}
+
                 </motion.div>
               )}
             </AnimatePresence>
