@@ -2387,6 +2387,36 @@ const DepositRequestView = ({ user }: { user: FirebaseUser | null }) => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-12 py-8">
+      {/* 🔥 ROADMAP SECTION */}
+      <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-[32px] mb-12 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
+          <Sparkles className="w-32 h-32 text-emerald-500" />
+        </div>
+        
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 md:gap-4">
+          {/* Connecting Line */}
+          <div className="hidden md:block absolute top-[28px] left-[10%] right-[10%] h-[2px] bg-slate-800" />
+          
+          {[
+            { step: 1, title: "Deposit Funds", desc: "Select payment method & amount", icon: Wallet },
+            { step: 2, title: "Verification", desc: "Our team reviews your transfer", icon: ShieldCheck },
+            { step: 3, title: "Wallet Updated", desc: "Balance reflects in your account", icon: CheckCircle2 },
+            { step: 4, title: "Claim Website", desc: "Get your free Shopify store", icon: ShoppingBag }
+          ].map((item, idx) => (
+            <div key={idx} className="relative z-10 flex flex-col items-center text-center md:flex-1 group/item">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 mb-4 bg-slate-950 ${idx === 0 ? 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'border-slate-800 group-hover/item:border-slate-700'}`}>
+                <item.icon className={`w-6 h-6 ${idx === 0 ? 'text-emerald-500' : 'text-slate-600 group-hover/item:text-slate-500'}`} />
+                <div className="absolute -top-2 -right-2 w-6 h-6 bg-slate-800 rounded-lg flex items-center justify-center text-[10px] font-black text-white border border-slate-700">
+                  {item.step}
+                </div>
+              </div>
+              <h4 className={`text-[10px] font-black uppercase tracking-widest mb-1.5 ${idx === 0 ? 'text-white' : 'text-slate-500'}`}>{item.title}</h4>
+              <p className="text-[10px] text-slate-700 font-bold max-w-[140px] leading-tight uppercase">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="text-center space-y-4">
         <h3 className="text-4xl font-black text-white uppercase tracking-tighter">Increase your capital</h3>
         <p className="text-slate-500 text-sm font-medium max-w-xl mx-auto italic">Scale your ad campaigns and synchronize bulk Shopify orders by maintaining a healthy wallet balance.</p>
@@ -3765,6 +3795,47 @@ const LandingPage = ({ openAuth }: { openAuth: (mode: 'login' | 'signup') => voi
                 <span className="text-white font-bold">1M+ Users</span> worldwide trust KIT GIZMO.
               </div>
             </div>
+
+            {/* 🔥 FREE SHOPIFY WEBSITE PROMO SECTION */}
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              whileInView={{ scale: 1, opacity: 1 }}
+              viewport={{ once: true }}
+              className="mt-12 w-full max-w-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-[1px] rounded-[32px] shadow-2xl shadow-emerald-500/20 group"
+            >
+              <div className="bg-slate-950 rounded-[31px] p-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4">
+                  <div className="bg-emerald-500 text-slate-950 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest animate-pulse">
+                    Hot Offer
+                  </div>
+                </div>
+                
+                <div className="relative z-10 space-y-4">
+                  <div className="flex items-center gap-3 justify-center md:justify-start">
+                    <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
+                      <Sparkles className="w-6 h-6 text-emerald-400" />
+                    </div>
+                    <h3 className="text-2xl font-black text-white italic tracking-tight uppercase">Get a Free Shopify Website</h3>
+                  </div>
+                  
+                  <p className="text-slate-300 text-sm md:text-base font-medium leading-relaxed">
+                    🔥 Limited Time Offer: <span className="text-emerald-400 font-bold">Deposit $50</span> into your wallet and get a Full Complete Shopify Website with Payment Gateway integrated for <span className="text-white font-black underline decoration-emerald-500 decoration-2">100% FREE!</span>
+                  </p>
+                  
+                  <div className="pt-2">
+                    <button 
+                      onClick={() => openAuth('signup')}
+                      className="bg-white text-slate-950 px-8 py-3 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-emerald-400 transition-all flex items-center gap-2 group mx-auto md:mx-0 shadow-lg"
+                    >
+                      Claim Discounted Offer <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Decorative background flair */}
+                <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full" />
+              </div>
+            </motion.div>
 
             <ComparisonCard />
           </motion.div>
@@ -5280,12 +5351,40 @@ const DashboardLayout = ({ user, userData }: { user: FirebaseUser | null, userDa
   const adminSidebarItem = { id: 'admin', label: 'Admin Panel', icon: Lock };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 flex">
-      {/* Sidebar */}
-      <aside className={`
-        fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 border-r border-slate-800 transition-transform duration-300 lg:relative lg:translate-x-0
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
+    <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col overflow-hidden">
+      {/* 🎁 PROMOTION BAR */}
+      <motion.div 
+        initial={{ y: -50 }}
+        animate={{ y: 0 }}
+        className="bg-emerald-600 cursor-pointer hover:bg-emerald-500 transition-all py-3 px-6 flex justify-center items-center gap-4 z-50 shadow-lg border-b border-white/10 shrink-0"
+        onClick={() => setActiveTab('deposit')}
+      >
+        <div className="bg-white/20 px-2 py-0.5 rounded text-[9px] font-black text-white uppercase tracking-widest animate-pulse border border-white/30 hidden sm:block">Special Offer</div>
+        <p className="text-white text-xs md:text-sm font-black uppercase tracking-tight flex items-center gap-2 text-center">
+          🎁 Get a FREE Complete Shopify Website! Deposit $50 to claim your offer now 
+          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </p>
+      </motion.div>
+
+      <div className="flex flex-1 min-h-0 relative overflow-hidden">
+        {/* Mobile Sidebar Backdrop */}
+        <AnimatePresence>
+          {isSidebarOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSidebarOpen(false)}
+              className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 lg:hidden cursor-pointer"
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Sidebar */}
+        <aside className={`
+          fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 border-r border-slate-800 transition-transform duration-300 lg:relative lg:translate-x-0
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}>
         <div className="h-full flex flex-col p-6 overflow-y-auto">
           <div className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-3">
@@ -5376,7 +5475,8 @@ const DashboardLayout = ({ user, userData }: { user: FirebaseUser | null, userDa
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto relative">
+        
         {/* Header */}
         <header className="h-20 border-b border-slate-800 bg-slate-950/50 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-40">
           <div className="flex items-center gap-6">
@@ -5810,6 +5910,7 @@ const DashboardLayout = ({ user, userData }: { user: FirebaseUser | null, userDa
           animation: spin-slow 8s linear infinite;
         }
       `}</style>
+      </div>
     </div>
   );
 };
