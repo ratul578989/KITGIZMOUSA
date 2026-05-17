@@ -117,7 +117,7 @@ import emailjs from 'emailjs-com';
 
 // EmailJS Configuration
 const EMAILJS_SERVICE_ID = "service_8c49pg7"; 
-const EMAILJS_TEMPLATE_ID = "template_0tu0jog"; 
+const EMAILJS_TEMPLATE_ID = "template_yw4ehp6"; 
 const EMAILJS_PUBLIC_KEY = "pvne_3k67McqqlB7e"; 
 
 // --- Types ---
@@ -2155,7 +2155,6 @@ const PayoutView = ({ user, totalBalance }: { user: FirebaseUser | null, totalBa
 
     setLoading(true);
     try {
-      // Create payout request and deduct balance in a single transaction
       await runTransaction(db, async (transaction) => {
         const userRef = doc(db, 'users', user.uid);
         const userSnap = await transaction.get(userRef);
@@ -2169,7 +2168,6 @@ const PayoutView = ({ user, totalBalance }: { user: FirebaseUser | null, totalBa
           throw new Error("Insufficient balance for withdrawal.");
         }
         
-        // 1. Create payout request document - Pending by default
         const newPayoutRef = doc(collection(db, 'payouts'));
         transaction.set(newPayoutRef, {
           userId: user.uid,
@@ -2182,7 +2180,6 @@ const PayoutView = ({ user, totalBalance }: { user: FirebaseUser | null, totalBa
           updatedAt: serverTimestamp()
         });
         
-        // 2. Deduct balance immediately
         transaction.update(userRef, {
           totalBalance: currentBalance - numAmount,
           updatedAt: serverTimestamp()
@@ -2197,7 +2194,7 @@ const PayoutView = ({ user, totalBalance }: { user: FirebaseUser | null, totalBa
       if (err.message.includes("Insufficient balance")) {
         alert(err.message);
       } else {
-        handleFirestoreError(err, OperationType.CREATE, 'payouts');
+        handleFirestoreError(err, OperationType.WRITE, 'payouts');
       }
     } finally {
       setLoading(false);
@@ -3120,6 +3117,7 @@ const AuthModal = ({
           {
             email: formData.email,
             passcode: code,
+            time: "15 minutes",
           },
           EMAILJS_PUBLIC_KEY
         );
@@ -4488,7 +4486,6 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
           attachmentName = attachment.name;
         } catch (storageErr) {
           console.error("Support chat storage upload failed, attempting fallback:", storageErr);
-          // If it's a small image, we can try base64 as a fallback for the UI to at least show something
           if (attachment.type.startsWith('image/') && attachment.size < 1024 * 512) {
             try {
               const base64 = await new Promise<string>((resolve, reject) => {
@@ -4517,6 +4514,10 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
         createdAt: new Date()
       });
 
+      setReply('');
+      setAttachment(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+
       // Update ticket status based on sender and current state
       const ticketRef = doc(db, 'support_tickets', ticket.id);
       const updateData: any = {
@@ -4524,23 +4525,18 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
       };
 
       if (isAdminView) {
-        // If admin replies and it was Pending or open, move to Pending Admin Review
         if (ticket.status === 'Pending' || ticket.status === 'open') {
           updateData.status = 'Pending Admin Review';
         }
       } else {
-        // If customer replies and it was Solved, re-open it
         if (ticket.status === 'Solved') {
           updateData.status = 'open';
         }
       }
 
       await updateDoc(ticketRef, updateData);
-
-      setReply('');
-      setAttachment(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    } catch (err) {
+    } catch (err: any) {
+      console.error("Support chat send error:", err);
       handleFirestoreError(err, OperationType.WRITE, `support_tickets/${ticket.id}/messages`);
     } finally {
       setSending(false);
@@ -4587,7 +4583,7 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
           </div>
         </div>
 
-        {/* Replies */}
+          {/* Replies */}
         {messages.map((msg) => {
           const isFromAdmin = msg.senderEmail === 'info.kitgizmo@gmail.com';
           const alignRight = isFromAdmin;
@@ -4600,11 +4596,11 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
                   : 'bg-emerald-500 rounded-tl-none shadow-lg shadow-emerald-500/10'
               }`}>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className={`text-[9px] font-black uppercase tracking-widest ${alignRight ? 'text-emerald-400' : 'text-white'}`}>
+                  <span className={`text-[9px] font-black uppercase tracking-widest text-white`}>
                     {alignRight ? 'OFFICIAL SUPPORT ⚡' : 'Me'}
                   </span>
-                  <span className={`text-[9px] font-bold uppercase tracking-widest ${alignRight ? 'text-slate-500' : 'text-white/40'}`}>•</span>
-                  <span className={`text-[9px] font-bold uppercase tracking-widest ${alignRight ? 'text-slate-500' : 'text-white/40'}`}>
+                  <span className="text-[9px] text-white/40 font-bold uppercase tracking-widest">•</span>
+                  <span className="text-[9px] text-white/40 font-bold uppercase tracking-widest">
                     {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString() : 
                      msg.createdAt instanceof Date ? msg.createdAt.toLocaleTimeString() : 'Just now'}
                   </span>

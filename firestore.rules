@@ -62,7 +62,7 @@ service cloud.firestore {
       allow update: if isAdmin() || (
         isOwner(userId) && 
         incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'phoneNumber', 'updatedAt', 'totalBalance', 'dashboardWidgets']) &&
-        (existing().isAdmin == incoming().isAdmin || !incoming().keys().contains('isAdmin'))
+        (!incoming().keys().contains('isAdmin') || incoming().isAdmin == existing().isAdmin)
       );
     }
 
@@ -81,14 +81,14 @@ service cloud.firestore {
     }
 
     match /payouts/{payoutId} {
-      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow list: if isAdmin() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
       allow get: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow create: if isSignedIn() && incoming().userId == request.auth.uid;
       allow update, delete: if isAdmin();
     }
 
     match /support_tickets/{ticketId} {
-      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow list: if isAdmin() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
       allow get: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow create: if isSignedIn() && incoming().userId == request.auth.uid;
       allow update: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
