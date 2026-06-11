@@ -2269,6 +2269,7 @@ const DepositRequestView = ({ user }: { user: FirebaseUser | null }) => {
   const [verifying, setVerifying] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -2285,6 +2286,12 @@ const DepositRequestView = ({ user }: { user: FirebaseUser | null }) => {
     });
     return () => unsub();
   }, [user]);
+
+  const handleCopy = (address: string) => {
+    navigator.clipboard.writeText(address);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2386,15 +2393,14 @@ const DepositRequestView = ({ user }: { user: FirebaseUser | null }) => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12 py-8">
-      {/* 🔥 ROADMAP SECTION */}
-      <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-[32px] mb-12 relative overflow-hidden group">
+    <div className="max-w-5xl mx-auto space-y-12 py-8 px-4 sm:px-6">
+      {/* Roadmap section */}
+      <div className="bg-slate-900/50 border border-slate-800/80 p-5 sm:p-6 md:p-8 rounded-[24px] sm:rounded-[32px] relative overflow-hidden group">
         <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
           <Sparkles className="w-32 h-32 text-emerald-500" />
         </div>
         
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 md:gap-4">
-          {/* Connecting Line */}
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8 md:gap-4 font-sans">
           <div className="hidden md:block absolute top-[28px] left-[10%] right-[10%] h-[2px] bg-slate-800" />
           
           {[
@@ -2404,169 +2410,320 @@ const DepositRequestView = ({ user }: { user: FirebaseUser | null }) => {
             { step: 4, title: "Claim Website", desc: "Get your free Shopify store", icon: ShoppingBag }
           ].map((item, idx) => (
             <div key={idx} className="relative z-10 flex flex-col items-center text-center md:flex-1 group/item">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 mb-4 bg-slate-950 ${idx === 0 ? 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'border-slate-800 group-hover/item:border-slate-700'}`}>
-                <item.icon className={`w-6 h-6 ${idx === 0 ? 'text-emerald-500' : 'text-slate-600 group-hover/item:text-slate-500'}`} />
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 mb-4 bg-slate-950 ${idx === 0 ? 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'border-slate-800'}`}>
+                <item.icon className={`w-6 h-6 ${idx === 0 ? 'text-emerald-500' : 'text-slate-600'}`} />
                 <div className="absolute -top-2 -right-2 w-6 h-6 bg-slate-800 rounded-lg flex items-center justify-center text-[10px] font-black text-white border border-slate-700">
                   {item.step}
                 </div>
               </div>
               <h4 className={`text-[10px] font-black uppercase tracking-widest mb-1.5 ${idx === 0 ? 'text-white' : 'text-slate-500'}`}>{item.title}</h4>
-              <p className="text-[10px] text-slate-700 font-bold max-w-[140px] leading-tight uppercase">{item.desc}</p>
+              <p className="text-[10px] text-slate-750 font-bold max-w-[140px] leading-tight uppercase">{item.desc}</p>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="text-center space-y-4">
-        <h3 className="text-4xl font-black text-white uppercase tracking-tighter">Increase your capital</h3>
+      <div className="text-center space-y-3">
+        <h3 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter animate-fade-in animate-duration-500">Increase your capital</h3>
         <p className="text-slate-500 text-sm font-medium max-w-xl mx-auto italic">Scale your ad campaigns and synchronize bulk Shopify orders by maintaining a healthy wallet balance.</p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-12 items-start">
-        {/* Left: Form */}
-        <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 p-8 rounded-[32px] space-y-8 shadow-2xl">
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">1. Enter Deposit Amount ($)</label>
-              <div className="relative">
-                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-emerald-500 font-bold">$</span>
+      {/* Premium Amount Card */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-slate-850 rounded-[24px] sm:rounded-[32px] p-5 sm:p-8 text-center shadow-2xl">
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+        <div className="absolute -top-12 -left-12 w-48 h-48 bg-emerald-500/5 blur-3xl rounded-full" />
+        <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-emerald-500/5 blur-3xl rounded-full" />
+        
+        <div className="relative z-10 space-y-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded-full">
+            <DollarSign className="w-3.5 h-3.5 animate-pulse" /> Kit Gizmo Wallet Gateway
+          </span>
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Required Deposit Amount</p>
+          <div className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tighter flex items-center justify-center gap-1">
+            <span className="text-emerald-500 font-extrabold">$</span>
+            <span>{amount ? Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}</span>
+            <span className="text-xs sm:text-sm font-semibold text-slate-500 self-end mb-1 ml-1">USD</span>
+          </div>
+          <p className="text-[10px] uppercase font-bold tracking-wider">
+            {Number(amount) >= 50 ? (
+              <span className="text-emerald-400">✓ Eligible for free shopify store bonus</span>
+            ) : (
+              <span className="text-slate-500">Minimum Deposit: <strong className="text-white">$50.00</strong></span>
+            )}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-12 gap-8 items-start">
+        {/* Left: Interactive Form (8 columns) */}
+        <form onSubmit={handleSubmit} className="lg:col-span-8 space-y-8">
+          
+          {/* Step 1: Define Funding Capital */}
+          <div className="bg-slate-900/60 border border-slate-850 p-5 sm:p-6 md:p-8 rounded-[24px] sm:rounded-[32px] space-y-6">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 font-black text-xs border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                1
+              </span>
+              <div>
+                <h4 className="text-sm font-black text-white uppercase tracking-wider">Enter Deposit Amount</h4>
+                <p className="text-[10px] text-slate-500 font-medium uppercase">Specify the capital you want to add to your balance</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="relative group">
+                <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500 select-none pointer-events-none group-focus-within:text-emerald-400 transition-colors font-black text-xl">$</span>
                 <input 
                   type="number" 
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder="MIN $50.00"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-12 py-5 text-white focus:border-emerald-500 outline-none transition-all font-black text-xl"
+                  placeholder="Minimum $50.00"
+                  className="w-full bg-slate-950 border-2 border-slate-855 rounded-2xl pl-14 pr-6 py-4 sm:py-5 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-black text-lg sm:text-xl shadow-inner animate-transition"
+                  min="50"
                   required
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">2. Select Payment Method</label>
-              <div className="grid grid-cols-1 gap-2">
-                {paymentMethods.map(m => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setSelectedMethod(m)}
-                    className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${selectedMethod?.id === m.id ? 'bg-emerald-500/10 border-emerald-500/50' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`}
-                  >
-                    <div className={`p-2 rounded-xl ${selectedMethod?.id === m.id ? 'bg-emerald-500/20' : 'bg-slate-900'}`}>
-                      <Globe className={`w-4 h-4 ${selectedMethod?.id === m.id ? 'text-emerald-400' : 'text-slate-500'}`} />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-xs font-black text-white uppercase">{m.methodName}</p>
-                    </div>
-                    {selectedMethod?.id === m.id && <CheckCircle2 className="w-4 h-4 text-emerald-500 ml-auto" />}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {selectedMethod && (
-              <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">3. Send funds to:</label>
-                  <div className="bg-emerald-500/10 text-emerald-500 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-tighter">Manual Link</div>
-                </div>
-                
-                {selectedMethod.qrUrl && (
-                  <div className="flex justify-center p-4 bg-white rounded-xl">
-                    <img src={selectedMethod.qrUrl} alt="QR Code" className="w-32 h-32 object-contain" referrerPolicy="no-referrer" />
-                  </div>
-                )}
-
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="text" 
-                    readOnly 
-                    value={selectedMethod.paymentId} 
-                    className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-[10px] font-mono text-slate-300 outline-none"
-                  />
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(selectedMethod.paymentId);
-                      alert("Address copied!");
-                    }}
-                    className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-white transition-colors"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {selectedMethod.instructions && (
-                  <div className="p-3 bg-slate-900/50 border border-slate-800 rounded-xl text-[10px] text-slate-400 font-medium italic">
-                    {selectedMethod.instructions}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">4. Transaction ID / Proof</label>
-              <div className="relative">
-                <Key className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 w-5 h-5" />
-                <input 
-                  type="text" 
-                  value={trxId}
-                  onChange={(e) => setTrxId(e.target.value)}
-                  placeholder="Paste TRXID or Reference here..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-12 py-5 text-white focus:border-emerald-500 outline-none transition-all font-mono text-sm"
-                  required
-                />
+              <div className="flex flex-col sm:flex-row items-center justify-between text-[10px] font-bold text-slate-500 uppercase px-1 gap-1">
+                <span>Minimum Deposit Amount: $50.00</span>
+                <span>Checkout Fee: 0.00%</span>
               </div>
             </div>
           </div>
 
+          {/* Step 2: Select Blockchain / Payment Network */}
+          <div className="bg-slate-900/60 border border-slate-850 p-5 sm:p-6 md:p-8 rounded-[24px] sm:rounded-[32px] space-y-6">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 font-black text-xs border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                2
+              </span>
+              <div>
+                <h4 className="text-sm font-black text-white uppercase tracking-wider">Select Payment Network</h4>
+                <p className="text-[10px] text-slate-500 font-medium uppercase">Choose your preferred settlement blockchain</p>
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-3">
+              {paymentMethods.map(m => {
+                const isSelected = selectedMethod?.id === m.id;
+                const name = m.methodName.toUpperCase();
+                const isTRC = name.includes('TRC') || name.includes('TETHER') || name.includes('USDT');
+                const isBTC = name.includes('BTC') || name.includes('BITCOIN');
+                
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setSelectedMethod(m)}
+                    className={`relative flex items-center gap-4 p-4 sm:p-5 rounded-2xl border text-left transition-all duration-300 group ${
+                      isSelected 
+                        ? 'bg-slate-950 border-emerald-500 shadow-[0_4px_25px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/20' 
+                        : 'bg-slate-950/40 border-slate-855 hover:bg-slate-950 hover:border-slate-750'
+                    }`}
+                  >
+                    <div className={`p-3 rounded-xl transition-all duration-300 ${
+                      isSelected 
+                        ? 'bg-emerald-500/15 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.1)]' 
+                        : 'bg-slate-900 text-slate-500 group-hover:text-slate-400'
+                    }`}>
+                      {isBTC ? (
+                        <Wallet className="w-5 h-5" />
+                      ) : isTRC ? (
+                        <Globe className="w-5 h-5" />
+                      ) : (
+                        <CreditCard className="w-5 h-5" />
+                      )}
+                    </div>
+                    
+                    <div className="space-y-0.5 min-w-0">
+                      <p className="text-xs font-black text-white uppercase tracking-wider truncate">{m.methodName}</p>
+                      <p className="text-[9px] text-slate-500 uppercase tracking-widest font-extrabold flex items-center gap-1">
+                        <Zap className="w-3 h-3 text-amber-500 inline justify-center" /> Instant Process
+                      </p>
+                    </div>
+
+                    {isSelected && (
+                      <div className="ml-auto w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-slate-950" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Step 3: Address copy & QR */}
+          {selectedMethod && (
+            <div className="bg-slate-900/60 border border-slate-850 p-5 sm:p-6 md:p-8 rounded-[24px] sm:rounded-[32px] space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
+              <div className="flex items-center gap-3">
+                <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 font-black text-xs border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                  3
+                </span>
+                <div>
+                  <h4 className="text-sm font-black text-white uppercase tracking-wider">Transfer Funds to Secure Address</h4>
+                  <p className="text-[10px] text-slate-500 font-medium uppercase">Send the exact amount above to the network credentials</p>
+                </div>
+              </div>
+
+              {/* Secure Address Content Card */}
+              <div className="bg-slate-950 border border-slate-850 rounded-2xl p-4 sm:p-6 md:p-8 space-y-6 relative overflow-hidden shadow-inner font-sans">
+                <div className="absolute top-0 right-0 py-1.5 px-4 bg-emerald-500/10 border-b border-l border-emerald-500/10 text-emerald-450 text-[8px] font-black uppercase tracking-widest rounded-bl-2xl">
+                  Verified Escrow Link
+                </div>
+
+                {selectedMethod.qrUrl && (
+                  <div className="flex flex-col items-center justify-center space-y-2 py-4">
+                    <div className="p-4 bg-white rounded-2xl shadow-2xl border-4 border-slate-900 hover:scale-[1.02] transition-transform">
+                      <img src={selectedMethod.qrUrl} alt="QR Code" className="w-36 h-36 object-contain" referrerPolicy="no-referrer" />
+                    </div>
+                    <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-1">Scan to direct pay from wallet</span>
+                  </div>
+                )}
+
+                <div className="space-y-2.5">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block font-sans">Network Deposit Address</label>
+                  <div className="flex flex-col sm:flex-row items-stretch gap-2.5 min-w-0">
+                    <div className="flex-1 bg-slate-900/60 border border-slate-850 rounded-xl px-4 sm:px-5 py-4 flex items-center justify-between font-mono text-[10px] sm:text-xs text-emerald-400 select-all overflow-x-auto whitespace-normal break-all shadow-sm">
+                      <span className="w-full tracking-tight">{selectedMethod.paymentId}</span>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => handleCopy(selectedMethod.paymentId)}
+                      className={`px-6 py-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-md shrink-0 w-full sm:w-auto ${
+                        copied 
+                          ? 'bg-emerald-500 text-slate-950 font-black scale-[0.97]' 
+                          : 'bg-slate-850 hover:bg-slate-800 text-white hover:text-emerald-400 border border-slate-800 hover:border-emerald-500/20'
+                      }`}
+                    >
+                      {copied ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 text-slate-950" />
+                          <span>Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          <span>Copy Address</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {selectedMethod.instructions && (
+                  <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl flex gap-3.5 items-start">
+                    <Info className="w-4.5 h-4.5 text-emerald-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <span className="text-[9px] font-black text-emerald-400 uppercase tracking-wider block">Network Protocol Agreement</span>
+                      <p className="text-[10px] text-slate-400 leading-relaxed font-semibold italic">{selectedMethod.instructions}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Transaction ID Submission */}
+          <div className="bg-slate-900/60 border border-slate-850 p-5 sm:p-6 md:p-8 rounded-[24px] sm:rounded-[32px] space-y-6">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 font-black text-xs border border-emerald-500/25 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                4
+              </span>
+              <div>
+                <h4 className="text-sm font-black text-white uppercase tracking-wider font-sans">Transaction Submission</h4>
+                <p className="text-[10px] text-slate-500 font-medium uppercase">Input blockchain TXID reference to verify and execute</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-emerald-400 uppercase tracking-wide block">
+                  Enter your Transaction ID here to verify your deposit:
+                </label>
+                <div className="relative group">
+                  <Key className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-400 transition-colors w-5 h-5" />
+                  <input 
+                    type="text" 
+                    value={trxId}
+                    onChange={(e) => setTrxId(e.target.value)}
+                    placeholder="Paste transaction hash / TXID or reference number here"
+                    className="w-full bg-slate-950 border-2 border-slate-850 rounded-2xl pl-14 pr-6 py-4 sm:py-5 text-white placeholder-slate-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-mono text-xs sm:text-sm shadow-inner"
+                    required
+                  />
+                </div>
+                <div className="p-3.5 bg-slate-950/40 border border-slate-850 rounded-xl">
+                  <p className="text-[9px] text-slate-500 leading-relaxed uppercase font-semibold">
+                    * Make sure to submit only the official blockchain TxID/Hash matching this specific deposit. Submitting unrelated, incorrect, or incomplete transaction IDs will be flagged as failed and will automatically delay processing times.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Form Action Submit Button */}
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 py-5 rounded-2xl font-black uppercase tracking-widest text-sm transition-all shadow-[0_20px_40px_-15px_rgba(16,185,129,0.3)] flex items-center justify-center gap-3 active:scale-[0.98]"
+            className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 py-5.5 rounded-2xl font-black uppercase tracking-widest text-sm transition-all shadow-[0_20px_40px_-15px_rgba(16,185,129,0.3)] flex items-center justify-center gap-3 active:scale-[0.985] cursor-pointer disabled:bg-slate-800 disabled:text-slate-600 disabled:shadow-none"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
               <>
-                <Plus className="w-5 h-5" />
-                Finalize Deposit Request
+                <Plus className="w-5 h-5 stroke-[2.5]" />
+                <span>Finalize Deposit Request</span>
               </>
             )}
           </button>
         </form>
 
-        {/* Right: Instructions & Support */}
-        <div className="space-y-8">
-          <div className="bg-slate-900 border border-slate-800 p-8 rounded-[32px] space-y-6">
-            <h4 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-3">
-              <Zap className="w-6 h-6 text-emerald-400" />
-              Verification Process
+        {/* Right: Steps Guide & VIP Support (4 columns) */}
+        <div className="lg:col-span-4 space-y-6 flex flex-col justify-stretch">
+          <div className="bg-slate-900/60 border border-slate-850 p-5 sm:p-6 md:p-8 rounded-[24px] sm:rounded-[32px] space-y-6 flex-1">
+            <h4 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-3">
+              <Zap className="w-5.5 h-5.5 text-emerald-400" />
+              Verification System
             </h4>
-            <div className="space-y-4">
+            
+            <div className="space-y-5">
               {[
-                { step: '01', title: 'Submit Request', desc: 'Enter the amount you wish to deposit and select your method.' },
-                { step: '02', title: 'Transfer Funds', desc: 'Send the exact amount to the details provided in your method.' },
-                { step: '03', title: 'Node Verification', desc: 'Our global team verifies the transaction on the blockchain or bank ledger.' },
-                { step: '04', title: 'Instant Credit', desc: 'Your KIT GIZMO wallet balance updates once 3-confirms are reached.' }
+                { step: '01', title: 'Submit Request', desc: 'Securely enter your required deposit amount and get billing details.' },
+                { step: '02', title: 'Execute Transfer', desc: 'Send the exact currency funds to the generated escrow address.' },
+                { step: '03', title: 'Ledger Audit', desc: 'Our automated validator node monitors blockchain confirmation pools.' },
+                { step: '04', title: 'Balance Credited', desc: 'The verified capital is instantly added to your KIT GIZMO account.' }
               ].map((s, i) => (
-                <div key={i} className="flex gap-4">
-                  <span className="text-emerald-500 font-black text-sm">{s.step}</span>
-                  <div>
-                    <h5 className="text-white font-bold text-sm tracking-tight">{s.title}</h5>
-                    <p className="text-slate-500 text-xs leading-relaxed mt-1 font-medium">{s.desc}</p>
+                <div key={i} className="flex gap-3.5 items-start">
+                  <span className="text-emerald-500 font-black text-xs bg-emerald-500/5 border border-emerald-500/10 px-2 py-1 rounded">
+                    {s.step}
+                  </span>
+                  <div className="space-y-0.5">
+                    <h5 className="text-white font-black text-xs uppercase tracking-wide">{s.title}</h5>
+                    <p className="text-slate-500 text-[10px] leading-normal font-semibold font-sans">{s.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-emerald-500 p-8 rounded-[32px] flex items-center justify-between group cursor-pointer overflow-hidden relative">
-            <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-all">
-               <Headphones className="w-32 h-32 text-slate-950" />
+          <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 sm:p-8 rounded-[24px] sm:rounded-[32px] flex flex-col justify-between group cursor-pointer overflow-hidden relative shadow-lg min-h-[220px]">
+            <div className="absolute -right-6 -bottom-6 opacity-15 group-hover:opacity-25 transition-all group-hover:scale-110 duration-500">
+               <Headphones className="w-36 h-36 text-slate-950" />
             </div>
-            <div className="relative z-10">
-              <p className="text-slate-950 font-black text-xl leading-tight">Need help with <br /> large wire transfers?</p>
-              <p className="text-slate-900 text-xs font-bold mt-2 uppercase tracking-widest">Connect with VIP Support</p>
+            
+            <div className="relative z-10 space-y-1">
+              <span className="text-[10px] bg-slate-950 text-emerald-400 font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                VIP GATEWAY
+              </span>
+              <p className="text-slate-950 font-black text-2xl leading-none pt-4 font-sans">Need help with large transfers?</p>
+              <p className="text-slate-900 text-[10px] font-extrabold uppercase tracking-widest pt-1">Connect with VIP Enterprise Support</p>
             </div>
-            <ArrowRight className="w-8 h-8 text-slate-950 group-hover:translate-x-2 transition-transform relative z-10" />
+            
+            <div className="flex items-center justify-between pt-6 mt-auto relative z-10 font-sans">
+              <span className="text-slate-950 text-xs font-black uppercase tracking-widest border-b-2 border-slate-950 pb-0.5">Contact Agent</span>
+              <div className="w-10 h-10 rounded-full bg-slate-950 flex items-center justify-center text-white group-hover:translate-x-2 transition-transform duration-300">
+                <ArrowRight className="w-5 h-5 text-emerald-400" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -4503,21 +4660,40 @@ const AdCampaignsView = ({
 const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTicket, user: FirebaseUser | null, isAdminView?: boolean, onBack: () => void }) => {
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [reply, setReply] = useState('');
-  const [attachment, setAttachment] = useState<File | null>(null);
   const [sending, setSending] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const currentUser = user;
+  const messageInput = reply;
+  const setMessageInput = setReply;
+  const setLoading = setSending;
+
+  const handleSendSupportMessage = async (ticketId: string, text: string) => {
+    if (!text.trim() || !currentUser) return;
+    try {
+      await addDoc(collection(db, "support_messages"), {
+        ticketId: ticketId,
+        senderEmail: currentUser.email,
+        text: text.trim(),
+        createdAt: new Date()
+      });
+      setMessageInput(""); 
+    } catch (error) {
+      console.error("Chat Error:", error);
+      if (typeof setLoading === "function") setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const q = query(
-      collection(db, 'support_tickets', ticket.id, 'messages'),
+      collection(db, 'support_messages'),
+      where('ticketId', '==', ticket.id),
       orderBy('createdAt', 'asc')
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SupportMessage)));
     }, (err) => {
-      handleFirestoreError(err, OperationType.LIST, `support_tickets/${ticket.id}/messages`);
+      handleFirestoreError(err, OperationType.LIST, 'support_messages');
     });
     return () => unsubscribe();
   }, [ticket.id]);
@@ -4528,66 +4704,20 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
     }
   }, [messages]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("File too large. Maximum size is 5MB.");
-        return;
-      }
-      setAttachment(file);
-    }
-  };
-
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || (!reply.trim() && !attachment)) return;
+    if (!user || !reply.trim()) return;
     
     setSending(true);
     try {
-      let attachmentUrl = null;
-      let attachmentName = null;
-
-      if (attachment) {
-        setUploading(true);
-        try {
-          const storageRef = ref(storage, `support/${ticket.id}/${Date.now()}_${attachment.name}`);
-          const snapshot = await uploadBytes(storageRef, attachment);
-          attachmentUrl = await getDownloadURL(snapshot.ref);
-          attachmentName = attachment.name;
-        } catch (storageErr) {
-          console.error("Support chat storage upload failed, attempting fallback:", storageErr);
-          if (attachment.type.startsWith('image/') && attachment.size < 1024 * 512) {
-            try {
-              const base64 = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(attachment);
-              });
-              attachmentUrl = base64;
-              attachmentName = attachment.name + " (Embedded)";
-            } catch (readerErr) {
-              console.error("Base64 fallback failed:", readerErr);
-            }
-          }
-        } finally {
-          setUploading(false);
-        }
-      }
-
-      await addDoc(collection(db, 'support_tickets', ticket.id, 'messages'), {
-        senderId: user.uid,
+      await addDoc(collection(db, 'support_messages'), {
+        ticketId: ticket.id,
         senderEmail: user.email,
         text: reply.trim(),
-        attachmentUrl,
-        attachmentName,
         createdAt: new Date()
       });
 
       setReply('');
-      setAttachment(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
 
       // Update ticket status based on sender and current state
       const ticketRef = doc(db, 'support_tickets', ticket.id);
@@ -4608,10 +4738,9 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
       await updateDoc(ticketRef, updateData);
     } catch (err: any) {
       console.error("Support chat send error:", err);
-      handleFirestoreError(err, OperationType.WRITE, `support_tickets/${ticket.id}/messages`);
+      handleFirestoreError(err, OperationType.WRITE, 'support_messages');
     } finally {
       setSending(false);
-      setUploading(false);
     }
   };
 
@@ -4646,11 +4775,6 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
               </span>
             </div>
             <p className="text-white text-sm leading-relaxed font-bold">{ticket.message}</p>
-            {ticket.imageUrl && (
-              <div className="mt-3 rounded-xl overflow-hidden border border-white/10">
-                <img src={ticket.imageUrl} alt="Attached" className="max-h-64 w-full object-cover cursor-zoom-in" onClick={() => window.open(ticket.imageUrl, '_blank')} />
-              </div>
-            )}
           </div>
         </div>
 
@@ -4661,13 +4785,12 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
 
           return (
             <div key={msg.id} className={`flex ${alignRight ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] p-4 rounded-2xl ${
-                alignRight 
-                  ? 'bg-slate-800 border border-slate-700 rounded-tr-none shadow-xl' 
-                  : 'bg-emerald-500 rounded-tl-none shadow-lg shadow-emerald-500/10'
-              }`}>
+              <div 
+                className={`max-w-[80%] p-4 rounded-2xl shadow-xl ${alignRight ? 'rounded-tr-none' : 'rounded-tl-none'}`}
+                style={{ backgroundColor: alignRight ? '#1e293b' : '#10b981' }}
+              >
                 <div className="flex items-center gap-2 mb-1">
-                  <span className={`text-[9px] font-black uppercase tracking-widest text-white`}>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-white">
                     {alignRight ? 'OFFICIAL SUPPORT ⚡' : 'Me'}
                   </span>
                   <span className="text-[9px] text-white/40 font-bold uppercase tracking-widest">•</span>
@@ -4677,25 +4800,6 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
                   </span>
                 </div>
                 <p className="text-white text-sm leading-relaxed font-bold">{msg.text}</p>
-                
-                {msg.attachmentUrl && (
-                  <div className={`mt-2 p-3 rounded-xl border flex items-center gap-3 group transition-all cursor-pointer ${
-                    alignRight ? 'bg-slate-950/30 border-slate-700' : 'bg-white/10 border-white/20'
-                  }`} onClick={() => window.open(msg.attachmentUrl || '', '_blank')}>
-                    <div className={`p-2 rounded-lg ${alignRight ? 'bg-slate-900 text-emerald-500' : 'bg-white/20 text-white'}`}>
-                      {msg.attachmentUrl?.includes('data:image') || msg.attachmentUrl?.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                        <Image className="w-4 h-4" />
-                      ) : (
-                        <FileText className="w-4 h-4" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-tight truncate text-white">{msg.attachmentName || 'Attachment'}</p>
-                      <p className={`text-[8px] font-black uppercase tracking-widest ${alignRight ? 'text-slate-500' : 'text-white/50'}`}>Click to open</p>
-                    </div>
-                    <ArrowUpRight className={`w-3.5 h-3.5 ${alignRight ? 'text-slate-600' : 'text-white/30'} group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform`} />
-                  </div>
-                )}
               </div>
             </div>
           );
@@ -4705,23 +4809,6 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
       {/* Input */}
       <div className="p-6 bg-slate-900 border-t border-slate-800">
         <form onSubmit={handleSend} className="space-y-4">
-          {attachment && (
-            <div className="flex items-center justify-between p-3 bg-slate-950 border border-emerald-500/30 rounded-2xl">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-500/10 rounded-lg">
-                  <FileIcon name={attachment.name} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-white uppercase tracking-tight">{attachment.name}</p>
-                  <p className="text-[8px] font-bold text-slate-500 uppercase">Ready to upload • {(attachment.size / 1024).toFixed(0)} KB</p>
-                </div>
-              </div>
-              <button onClick={() => setAttachment(null)} className="p-1.5 hover:bg-rose-500/10 text-rose-500 rounded-lg transition-all">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-          
           <div className="flex gap-4">
             <div className="flex-1 relative group">
               <input 
@@ -4729,30 +4816,15 @@ const SupportChat = ({ ticket, user, isAdminView, onBack }: { ticket: SupportTic
                 value={reply}
                 onChange={e => setReply(e.target.value)}
                 placeholder="Type your message here..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-5 pr-14 py-4 text-white text-sm outline-none focus:border-emerald-500 transition-all font-medium placeholder:text-slate-700"
+                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500 transition-all font-medium placeholder:text-slate-700"
               />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                <input 
-                  type="file" 
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                <button 
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="p-2.5 text-slate-600 hover:text-emerald-500 transition-colors"
-                >
-                  <Upload className="w-5 h-5" />
-                </button>
-              </div>
             </div>
             
             <button 
               type="submit" 
-              disabled={sending || (!reply.trim() && !attachment)}
+              disabled={sending || !reply.trim()}
               className={`px-8 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${
-                sending || (!reply.trim() && !attachment)
+                sending || !reply.trim()
                   ? 'bg-slate-800 text-slate-600 cursor-not-allowed' 
                   : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20'
               }`}
@@ -4773,16 +4845,18 @@ const SupportView = ({ user }: { user: FirebaseUser | null }) => {
   const [submitting, setSubmitting] = useState(false);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [attachment, setAttachment] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
 
   useEffect(() => {
     if (!user || !user.uid) return;
-    const q = query(
-      collection(db, 'support_tickets'), 
-      where('userId', '==', user.uid)
-    );
+    const isAdmin = user.email === 'info.kitgizmo@gmail.com';
+    const q = isAdmin 
+      ? query(collection(db, 'support_tickets'))
+      : query(
+          collection(db, 'support_tickets'), 
+          where('userId', '==', user.uid)
+        );
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SupportTicket));
       // Sort client-side to avoid complex composite index requirement
@@ -4800,17 +4874,6 @@ const SupportView = ({ user }: { user: FirebaseUser | null }) => {
     return () => unsubscribe();
   }, [user]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("File too large. Maximum size is 5MB.");
-        return;
-      }
-      setAttachment(file);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -4821,48 +4884,21 @@ const SupportView = ({ user }: { user: FirebaseUser | null }) => {
 
     setSubmitting(true);
     try {
-      let imageUrl = null;
-      if (attachment) {
-        setIsUploading(true);
-        try {
-          const storageRef = ref(storage, `tickets/${user.uid}/${Date.now()}_${attachment.name}`);
-          const snapshot = await uploadBytes(storageRef, attachment);
-          imageUrl = await getDownloadURL(snapshot.ref);
-        } catch (storageErr) {
-          console.error("Support ticket storage upload failed, attempting fallback:", storageErr);
-          // If it's a small image, we can try base64 as a fallback for the UI to at least show something
-          if (attachment.type.startsWith('image/') && attachment.size < 1024 * 512) {
-            try {
-              const base64 = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(attachment);
-              });
-              imageUrl = base64;
-            } catch (readerErr) {
-              console.error("Base64 fallback failed:", readerErr);
-            }
-          }
-        } finally {
-          setIsUploading(false);
-        }
-      }
-
-      await addDoc(collection(db, 'support_tickets'), {
+      const ticketRef = doc(collection(db, 'support_tickets'));
+      const ticketId = ticketRef.id;
+      await setDoc(ticketRef, {
+        id: ticketId,
         userId: user.uid,
         userEmail: user.email,
         subject: subject || "No Subject",
         message: message.trim(),
-        imageUrl: imageUrl || null,
-        status: 'Pending',
+        status: 'open',
         createdAt: serverTimestamp(),
         lastMessageAt: serverTimestamp()
       });
 
       setSubject('');
       setMessage('');
-      setAttachment(null);
       
       const successDiv = document.createElement('div');
       successDiv.className = "fixed top-4 right-4 bg-emerald-500 text-slate-950 px-6 py-3 rounded-xl font-bold z-[200] shadow-2xl animate-bounce";
@@ -4874,7 +4910,6 @@ const SupportView = ({ user }: { user: FirebaseUser | null }) => {
       handleFirestoreError(err, OperationType.CREATE, 'support_tickets');
     } finally {
       setSubmitting(false);
-      setIsUploading(false);
     }
   };
 
@@ -4923,61 +4958,10 @@ const SupportView = ({ user }: { user: FirebaseUser | null }) => {
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Upload AHttachment (Optional)</label>
-              <div className="relative group/upload">
-                <input 
-                  type="file" 
-                  id="ticket-attachment"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                <div 
-                  className={`w-full h-40 bg-slate-950 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden ${attachment ? 'border-emerald-500/50' : 'border-slate-800 hover:border-emerald-500'}`}
-                >
-                  {attachment ? (
-                    <div className="p-8 flex flex-col items-center gap-3">
-                      <div className="p-4 bg-emerald-500/10 rounded-2xl">
-                        <FileIcon name={attachment.name} />
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-black text-white uppercase tracking-tight truncate max-w-[200px]">{attachment.name}</p>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">{(attachment.size / (1024 * 1024)).toFixed(2)} MB • READY</p>
-                      </div>
-                      <button 
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setAttachment(null);
-                        }}
-                        className="absolute top-4 right-4 p-2 bg-rose-500 text-white rounded-xl hover:bg-rose-600 transition-all z-20 shadow-lg"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <label htmlFor="ticket-attachment" className="w-full h-full flex flex-col items-center justify-center cursor-pointer p-8">
-                      {isUploading ? (
-                        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-                      ) : (
-                        <>
-                          <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 group-hover/upload:border-emerald-500/30 transition-all mb-4">
-                            <Upload className="w-8 h-8 text-slate-600 group-hover/upload:text-emerald-500 transition-colors" />
-                          </div>
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover/upload:text-emerald-500 transition-colors">Select Attachment File</span>
-                          <span className="text-[9px] text-slate-700 mt-2 uppercase font-bold tracking-widest text-center">Supports Images, PDFs, or Documents up to 5MB</span>
-                        </>
-                      )}
-                    </label>
-                  )}
-                </div>
-              </div>
-            </div>
-
             <button 
               type="submit" 
-              disabled={submitting || isUploading}
-              className={`w-full ${submitting || isUploading ? 'bg-slate-850 text-slate-600 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_0_20px_-5px_rgba(16,185,129,0.4)]'} py-5 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3`}
+              disabled={submitting}
+              className={`w-full ${submitting ? 'bg-slate-850 text-slate-600 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_0_20px_-5px_rgba(16,185,129,0.4)]'} py-5 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3`}
             >
               {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
               {submitting ? 'Creating Ticket...' : 'Open Support Ticket'}
@@ -5005,8 +4989,18 @@ const SupportView = ({ user }: { user: FirebaseUser | null }) => {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="space-y-1">
-                    <h4 className="text-white font-black uppercase tracking-tight group-hover:text-emerald-400 transition-colors">{ticket.subject}</h4>
+                    <div className="flex flex-wrap gap-2 items-center mb-1">
+                      <span className="text-[9px] text-emerald-500 font-mono font-bold uppercase tracking-wider bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                        ID: {ticket.id}
+                      </span>
+                    </div>
+                    <h4 className="text-white font-black uppercase tracking-tight group-hover:text-emerald-400 transition-colors mt-1">{ticket.subject}</h4>
                     <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">Opened: {ticket.createdAt?.toDate ? ticket.createdAt.toDate().toLocaleDateString() : 'Pending'}</p>
+                    {user?.email === 'info.kitgizmo@gmail.com' && (
+                      <p className="text-[9px] text-amber-500/80 font-bold uppercase tracking-widest">
+                        User: {ticket.userEmail}
+                      </p>
+                    )}
                   </div>
                   <StatusBadge status={ticket.status} />
                 </div>
@@ -5356,11 +5350,14 @@ const DashboardLayout = ({ user, userData }: { user: FirebaseUser | null, userDa
       <motion.div 
         initial={{ y: -50 }}
         animate={{ y: 0 }}
-        className="bg-emerald-600 cursor-pointer hover:bg-emerald-500 transition-all py-3 px-6 flex justify-center items-center gap-4 z-50 shadow-lg border-b border-white/10 shrink-0"
-        onClick={() => setActiveTab('deposit')}
+        className="bg-emerald-600 cursor-pointer hover:bg-emerald-500 transition-all py-3 px-6 flex justify-center items-center gap-4 z-[70] shadow-lg border-b border-white/10 shrink-0"
+        onClick={() => {
+          setActiveTab('deposit');
+          setIsSidebarOpen(false);
+        }}
       >
         <div className="bg-white/20 px-2 py-0.5 rounded text-[9px] font-black text-white uppercase tracking-widest animate-pulse border border-white/30 hidden sm:block">Special Offer</div>
-        <p className="text-white text-xs md:text-sm font-black uppercase tracking-tight flex items-center gap-2 text-center">
+        <p className="text-white text-xs md:text-sm font-black uppercase tracking-tight flex items-center gap-2 text-center group">
           🎁 Get a FREE Complete Shopify Website! Deposit $50 to claim your offer now 
           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
         </p>
@@ -5375,14 +5372,14 @@ const DashboardLayout = ({ user, userData }: { user: FirebaseUser | null, userDa
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsSidebarOpen(false)}
-              className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 lg:hidden cursor-pointer"
+              className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] lg:hidden cursor-pointer"
             />
           )}
         </AnimatePresence>
 
         {/* Sidebar */}
         <aside className={`
-          fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 border-r border-slate-800 transition-transform duration-300 lg:relative lg:translate-x-0
+          fixed inset-y-0 left-0 z-[80] w-72 bg-slate-900 border-r border-slate-800 transition-transform duration-300 lg:relative lg:translate-x-0
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
         <div className="h-full flex flex-col p-6 overflow-y-auto">
@@ -5402,7 +5399,10 @@ const DashboardLayout = ({ user, userData }: { user: FirebaseUser | null, userDa
             {sidebarItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setIsSidebarOpen(false);
+                }}
                 className={`
                   w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm
                   ${activeTab === item.id 
@@ -5420,7 +5420,10 @@ const DashboardLayout = ({ user, userData }: { user: FirebaseUser | null, userDa
               <div className="pt-4 mt-4 border-t border-slate-800 space-y-1.5">
                 <p className="px-4 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-2">Internal Systems</p>
                 <button
-                  onClick={() => setActiveTab('admin')}
+                  onClick={() => {
+                    setActiveTab('admin');
+                    setIsSidebarOpen(false);
+                  }}
                   className={`
                     w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm
                     ${activeTab === 'admin' 

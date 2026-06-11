@@ -2,125 +2,95 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // --- Global Helpers ---
-    
-    function isSignedIn() {
-      return request.auth != null;
+    // --- 0. Global Safety Net ---
+    match /{document=**} {
+      allow read, write: if false;
     }
 
-    function isAdmin() {
-      return isSignedIn() && 
-             request.auth.token.get('email', '').lower() == 'info.kitgizmo@gmail.com';
+    // --- 3. Primitive Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
     }
 
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function incoming() {
-      return request.resource.data;
+    // Admin helper - strict email check without requiring verification flag if not populated by provider
+    function isAdmin() {
+      return isSignedIn() 
+          && (request.auth.token.email == 'info.kitgizmo@gmail.com' || request.auth.token.email == 'kitgizmobd@gmail.com');
     }
 
-    function existing() {
-      return resource.data;
-    }
+    // --- 4. Match Blocks ---
 
-    // --- Entity Validation Helpers ---
-
-    function isValidUser(data) {
-      return data.fullName is string && data.fullName.size() <= 100
-          && data.email is string && data.email.size() <= 100;
-    }
-
-    function isValidAdCampaign(data) {
-      return data.userId is string 
-          && data.userEmail is string
-          && data.dailyBudget is number;
-    }
-
-    function isValidOrder(data) {
-      return data.userId is string 
-          && data.userEmail is string
-          && data.price is number;
-    }
-
-    function isValidDeposit(data) {
-      return data.userId is string 
-          && data.amount is number;
-    }
-
-    // --- Specific Collection Rules ---
-    
     match /products/{productId} {
       allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /users/{userId} {
-      allow list: if isAdmin();
-      allow get: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) && isValidUser(incoming());
-      allow update: if isAdmin() || (
-        isOwner(userId) && 
-        incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'phoneNumber', 'updatedAt', 'totalBalance', 'dashboardWidgets']) &&
-        (!incoming().keys().contains('isAdmin') || incoming().isAdmin == existing().isAdmin)
-      );
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
     }
 
     match /orders/{orderId} {
-      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow get: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidOrder(incoming());
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isAdmin();
     }
 
     match /deposits/{depositId} {
-      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow get: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidDeposit(incoming());
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isAdmin();
     }
 
     match /payouts/{payoutId} {
-      allow list: if isAdmin() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
-      allow get: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isAdmin();
     }
 
     match /support_tickets/{ticketId} {
-      allow list: if isAdmin() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
-      allow get: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
-      allow update: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-
-      match /messages/{messageId} {
-        allow read, write: if isSignedIn();
-      }
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
     }
 
     match /ad_campaigns/{campaignId} {
-      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow get: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidAdCampaign(incoming());
-      allow update: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
     }
 
     match /payment_methods/{methodId} {
       allow read: if true;
+      allow write: if isAdmin();
     }
     
     match /payment_settings/{methodId} {
       allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /settings/{settingId} {
       allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // Default deny for anything not matched
-    match /{document=**} {
-      allow read, write: if false;
+    match /support_messages/{messageId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.senderEmail == request.auth.token.email;
+      allow update, delete: if isAdmin();
     }
   }
 }
