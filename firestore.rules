@@ -19,7 +19,10 @@ service cloud.firestore {
     // Admin helper - strict email check without requiring verification flag if not populated by provider
     function isAdmin() {
       return isSignedIn() 
-          && (request.auth.token.email == 'info.kitgizmo@gmail.com' || request.auth.token.email == 'kitgizmobd@gmail.com');
+          && (request.auth.token.email == 'info.kitgizmo@gmail.com' 
+              || request.auth.token.email == 'INFO.KITGIZMO@GMAIL.COM'
+              || request.auth.token.email == 'kitgizmobd@gmail.com' 
+              || request.auth.uid == 'oQrgjj30aMgmUxpLLKjeUjt5JtD3');
     }
 
     // --- 4. Match Blocks ---
